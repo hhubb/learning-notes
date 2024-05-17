@@ -71,7 +71,7 @@ GitHub - steveloughran/winutils: Windows binaries for Hadoop versions (built fro
 
 点击绿色的Code按钮，再选择Download Zip下载
 
-![img.png](img.png)
+![img.png](img_6.png)
 2.选择版本
 
 如果没有和你版本一致的文件夹，就选择和你版本最相近的，因为我的Hadoop版本是3.2.2版本，所以我选择的是hadoop-3.0.0
