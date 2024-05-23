@@ -88,6 +88,7 @@ vim spooldir.conf
 
 ```aidl
 # name the components on this agent
+# 如果需要采集多个文件夹下的数据，用空格分割 如 ”agent.sources = source1 source2“
 a1.sources = r1
 a1.sinks = k1
 a1.channels = c1
@@ -186,10 +187,13 @@ SLF4J: Actual binding is of type [org.slf4j.impl.Log4jLoggerFactory]
 [root@lavm-h1qfimpzbs test_data]# hadoop fs -cat /spooldir/files/24-05-17/1630/events-.1715934824464
 2024-05-17 16:30:26,407 (lifecycleSupervisor-1-4) [INFO - org.apache.flume.instrumentation.MonitoredCounterGroup.start(MonitoredCounterGroup.java:95)] Component type: SOURCE, name: r1 started
 ```
+### 日志数据采集到Kafka本根据文件名称发送到对应的Topic
+https://blog.csdn.net/qinqinde123/article/details/128131260?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_baidulandingword~default-0-128131260-blog-133811979.235^v43^pc_blog_bottom_relevance_base2&spm=1001.2101.3001.4242.1&utm_relevant_index=3
+
 
 ## 引发问题
 ### 小文件过多问题
-可以从介入到hdfs的数据文件看出，数据写入到hdfs后产生了很多小文件，每个文件只有一行数据。在真实生产中，过多的小文件会给HDFS带来额外的开销，营销存储和计算效率。
+可以从接入到hdfs的数据文件看出，数据写入到hdfs后产生了很多小文件，每个文件只有一行数据。在真实生产中，过多的小文件会给HDFS带来额外的开销，营销存储和计算效率。
 1. 要是要对小文件进行计算,那么hdfs中每一个小文件都会对应生成一个task,而每一个task的形成和计算都会占用一定的资源和启停时间,影响计算效率
 2. nn中要记录dn中存储的数据索引,小文件过多会生产很多记录占用nn内对应的容量,影响nn的寿命
 #### 解决方案
