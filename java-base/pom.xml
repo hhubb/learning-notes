@@ -3,9 +3,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>hbb.istudy.com</groupId>
-    <artifactId>java-learning-notes</artifactId>
+    <artifactId>java-base-learning-notes</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>java</name>
+    <name>java-base</name>
     <description>java学习笔记</description>
     <parent>
         <groupId>hbb.istudy.com</groupId>

@@ -19,6 +19,8 @@
     <modules>
         <module>netty</module>
         <module>redis</module>
+        <module>java-base</module>
+        <module>cloud</module>
     </modules>
     <dependencies>
         <dependency>
