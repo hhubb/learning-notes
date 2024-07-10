@@ -1,4 +1,4 @@
-# ElasticSearch8.14部署文档
+# ElasticSearch8.14单节点部署文档
 
 ## 修改主机名称
 (选一即可)，也可不修改 a. 命令： hostnamectl set-hostname dev_70_75
