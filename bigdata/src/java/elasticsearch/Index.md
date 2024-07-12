@@ -1,6 +1,6 @@
 # Index
 
-## 分片分配策略
+## 分片分配策略（多活）
 
 ### 索引级分片分配筛选器
 
@@ -41,7 +41,6 @@ index.routing.allocation.exclude.{**attribute**}
 如指定test索引分片要分配到size为big或者medium的节点上
 
 ```
-
 PUT test/_settings
 {
   "index.routing.allocation.include.size": "big,medium"
@@ -238,7 +237,7 @@ node.roles: [ data_cold ]
 node.roles: [ data_frozen ]
 ```
 
-## 索引阻碍Index blocks
+## 索引阻碍Index blocks（安全性，限制某些索引读写）
 
 可以限制一个索引都能进行什么操作。可以动态设置索引也可以使用API，一个索引一旦设置了索引阻碍，所有的分片都会生效。
 
@@ -279,7 +278,7 @@ PUT /<index>/_block/<block>
 
 **block**：**metadata**、**read**、**read_only**、**write**
 
-## 索引分片合并
+## 索引分片合并（优化内存碎片问题节约磁盘）
 
 ES中的分片实际上时Lucene索引，每个Lucene索引会有很多个段组成，每个段大小是可变的，小的段会定期合并到大的段，然后小的会删除。
 
@@ -293,3 +292,386 @@ ES使用单独的线程去执行合并任务，当任务线程满了，合并任
 index.merge.scheduler.max_thread_count
 ```
 
+## 相似模块//todo
+
+在创建和更新索引时可以配置相似性。
+
+创建相似性规则
+
+```
+PUT /index
+{
+  "settings": {
+    "index": {
+      "similarity": {
+        "my_similarity": {//规则名称
+          "type": "DFR", //类型
+          "basic_model": "g",
+          "after_effect": "l",
+          "normalization": "h2",
+          "normalization.h2.c": "3.0"
+        }
+      }
+    }
+  }
+}
+```
+
+在某个索引上使用相似性规则
+
+```
+PUT /test_index/_mapping
+{
+  "properties" : {
+    "title" : { "type" : "text", "similarity" : "my_similarity" }
+  }
+}
+```
+
+相似性类型：
+
+| 类型                          |      |      |
+| ----------------------------- | ---- | ---- |
+| BM25 similarity               |      |      |
+| DFR similarity                |      |      |
+| DFI similarity                |      |      |
+| IB similarity                 |      |      |
+| LM Dirichlet similarity       |      |      |
+| LM Jelinek Mercer similarity. |      |      |
+| Scripted similarity           |      |      |
+| Default Similarity            |      |      |
+
+## 慢日志（排查搜索慢问题）
+
+### 搜索查询慢日志配置-分片级别
+
+支持分片级别的慢日志搜索。分片级慢速搜索日志允许将慢速搜索(**查询和获取**阶段)记录到专门的日志文件中。
+
+可以设置阈值，达到阈值的查询和获取会被记录下来
+
+```
+index.search.slowlog.threshold.query.warn: 10s
+index.search.slowlog.threshold.query.info: 5s
+index.search.slowlog.threshold.query.debug: 2s
+index.search.slowlog.threshold.query.trace: 500ms
+
+index.search.slowlog.threshold.fetch.warn: 1s
+index.search.slowlog.threshold.fetch.info: 800ms
+index.search.slowlog.threshold.fetch.debug: 500ms
+index.search.slowlog.threshold.fetch.trace: 200ms
+```
+
+也可以在创建索引的时候动态设置,默认的话将值设置为-1
+
+```
+PUT /my-index-000001/_settings
+{
+  "index.search.slowlog.threshold.query.warn": "10s",
+  "index.search.slowlog.threshold.query.info": "5s",
+  "index.search.slowlog.threshold.query.debug": "2s",
+  "index.search.slowlog.threshold.query.trace": "500ms",
+  "index.search.slowlog.threshold.fetch.warn": "1s",
+  "index.search.slowlog.threshold.fetch.info": "800ms",
+  "index.search.slowlog.threshold.fetch.debug": "500ms",
+  "index.search.slowlog.threshold.fetch.trace": "200ms"
+}
+```
+
+注意：ES搜索会现在分片内搜索再聚合结果，所以这个阈值也是限制在分片上。
+
+慢日志文件相关配置在log4j2.properties
+
+### 慢日志排查问题-找到慢日志的来源配置
+
+设置记录慢日志时，是否将用户信息记录上。
+
+```
+PUT /my-index-000001/_settings
+{
+  "index.search.slowlog.include.user": true
+}
+```
+
+选择true后，查询慢日志时，就会返回慢日志相关信息以及ES用户相关信息
+
+```
+{
+  "@timestamp": "2024-02-21T12:42:37.255Z",
+  "log.level": "WARN",
+  "auth.type": "REALM",
+  "elasticsearch.slowlog.id": "tomcat-123",
+  "elasticsearch.slowlog.message": "[index6][0]",
+  "elasticsearch.slowlog.search_type": "QUERY_THEN_FETCH",
+  "elasticsearch.slowlog.source": "{\"query\":{\"match_all\":{\"boost\":1.0}}}",
+  "elasticsearch.slowlog.stats": "[]",
+  "elasticsearch.slowlog.took": "747.3micros",
+  "elasticsearch.slowlog.took_millis": 0,
+  "elasticsearch.slowlog.total_hits": "1 hits",
+  "elasticsearch.slowlog.total_shards": 1,
+  "user.name": "elastic",
+  "user.realm": "reserved",
+  "ecs.version": "1.2.0",
+  "service.name": "ES_ECS",
+  "event.dataset": "elasticsearch.index_search_slowlog",
+  "process.thread.name": "elasticsearch[runTask-0][search][T#5]",
+  "log.logger": "index.search.slowlog.query",
+  "elasticsearch.cluster.uuid": "Ui23kfF1SHKJwu_hI1iPPQ",
+  "elasticsearch.node.id": "JK-jn-XpQ3OsDUsq5ZtfGg",
+  "elasticsearch.node.name": "node-0",
+  "elasticsearch.cluster.name": "distribution_run"
+}
+```
+
+### 慢日志查询配置-索引级别
+
+```
+index.indexing.slowlog.threshold.index.warn: 10s
+index.indexing.slowlog.threshold.index.info: 5s
+index.indexing.slowlog.threshold.index.debug: 2s
+index.indexing.slowlog.threshold.index.trace: 500ms
+index.indexing.slowlog.source: 1000
+```
+
+也可以创建索引时动态配置
+
+```
+PUT /my-index-000001/_settings
+{
+  "index.indexing.slowlog.threshold.index.warn": "10s",
+  "index.indexing.slowlog.threshold.index.info": "5s",
+  "index.indexing.slowlog.threshold.index.debug": "2s",
+  "index.indexing.slowlog.threshold.index.trace": "500ms",
+  "index.indexing.slowlog.source": "1000"
+}
+```
+
+查找慢日志来源,默认情况下，Elasticsearch将在slowlog中记录_source的前1000个字符。
+
+```
+PUT /my-index-000001/_settings
+{
+//false or 0 表示不记录来源
+  "index.indexing.slowlog.include.user": true
+}
+```
+
+### 慢日志记录级别
+
+```
+//如果不需要记录哪个级别的日志，就将值设置成-1
+
+PUT /my-index-000001/_settings
+{
+  "index.indexing.slowlog.threshold.index.warn": "-1",
+  "index.indexing.slowlog.threshold.index.info": "5s",
+  "index.indexing.slowlog.threshold.index.debug": "-1",
+  "index.indexing.slowlog.threshold.index.trace": "-1",
+  "index.indexing.slowlog.source": "1000"
+}
+```
+
+## 存储
+
+索引存储默认是根据操作系统环境，选择最合适的值索引存储。
+
+可以指定索引存储
+
+```
+index.store.type: hybridfs
+```
+
+动态配置(**后面版本可能删除**)
+
+```
+PUT /my-index-000001 
+{
+  "settings": {
+    "index.store.type": "hybridfs"
+  }
+}
+```
+
+支持的存储
+
+| 存储类型     | 是否默认 | 是否在使用                                                   | 对应Lucene     |      |      |      |      |
+| ------------ | -------- | ------------------------------------------------------------ | -------------- | ---- | ---- | ---- | ---- |
+| **fs**       | 是       | 是                                                           |                |      |      |      |      |
+| **simplefs** | 否       | 7。15版本被废除，8.0已经删除Elasticsearch 7.15或更高版本使用niofs作为simplefs存储类型，因为它提供了优于或等同于simplefs的性能。 |                |      |      |      |      |
+| **niofs**    | 否       | 是，允许多线程；不予推荐在windows使用                        | NIOFSDirectory |      |      |      |      |
+| **mmapfs**   | 否       | 内存映射会占用进程中与被映射文件大小相等的虚拟内存地址空间的一部分，所以需要足够的虚拟地址空间。 | MMapDirectory  |      |      |      |      |
+| **hybridfs** | 否       | niofs和mmapfs的混合体，mmapfs类似，确保您有足够的虚拟地址空间。 |                |      |      |      |      |
+|              |          |                                                              |                |      |      |      |      |
+|              |          |                                                              |                |      |      |      |      |
+
+可以通过设置node.store.allow_mmap来限制mmapfs和相关hybridfs存储类型的使用。这是一个布尔值设置，指示是否允许内存映射。默认是允许。此设置很有用，例如，如果您处于无法控制创建大量内存映射的能力的环境中，那么您需要禁用使用内存映射的能力。
+
+### 预加载数据（提升索引的搜索性能）
+
+ES通过index.store.preload配置将索引放到缓存中，提升索引的搜索性能，但需要注意这可能会减慢索引的打开速度，因为索引只有在数据加载到物理内存之后才可用。
+
+**这个配置不一定会生效，因为这取决的机器的操作系统和索引的存储类型**
+
+配置默认值是[]
+
+[]表示不加载任何索引到缓存，
+
+*表示所有索引加载（需要注意的是，将所有数据加载到内存是没有意义的尤其是存储字段和术语向量的文件）
+
+推荐["nvd", "dvd", "tim", "doc", "dim"]
+
+```
+index.store.preload: ["nvd", "dvd"]
+```
+
+动态配置
+
+```
+PUT /my-index-000001
+{
+  "settings": {
+    "index.store.preload": ["nvd", "dvd"]
+  }
+}
+```
+
+注意，如果索引内存过大，大于主内存，开启后这将使索引和搜索变慢（因为它会导致文件系统缓存在大型合并后重新打开时被销毁，）
+
+## 预写日志（优化磁盘IO性能）
+
+每次Lucene提交Lucene的修改都是在操作磁盘，因此Lucene提交花销是很昂贵的。所以每次修改操作不会直接执行而是会在每个分片都将操作记录到事务日志”translog“上，所有的索引和删除操作都会先记录到translog中。当机器异常恢复后，最近被确认的操作虽然还没做Lucene提交，也会被从translog中恢复。
+
+每次ES刷新Lucene提交，就会生成一个新的translog日志。刷新是为了保证translog不会太大，以至于恢复时间变长。
+
+刷新Luence提交/预写日志配置
+
+只有当translog被同步并提交时，translog中的数据才会持久化到磁盘。所以当操作系统、JVM、磁盘、分片有问题时，会造成最后一次记录到translog后的数据丢失。
+
+
+
+```
+//translog从内存写道磁盘的频率,默认5s，不允许小于100ms
+index.translog.sync_interval:5s
+//更新方式默认request，request立即执行，async按照频率自动执行
+//request：每次（索引、删除、更新或批量请求）后translog都会从内存写道磁盘并提交（在硬件发生故障的情况下，所有已确认的写操作都已提交到磁盘）
+//async：表示在index.translog.sync_interval配置的频率下translog都会从内存写道磁盘并提交，如果发生失败，自上次自动提交以来所有已确认的写操作都将被丢弃。（这意味着会丢失数据）
+index.translog.durabilit:request
+//当translog大小达到阈值时也会进行从内存写道磁盘并提交,默认512mb
+index.translog.flush_threshold_size:512mb
+```
+
+## 历史预留（灾备增量同步数据）
+
+如果一个副本节点短暂离线，在它重新恢复这段时间里，会丢失一些操作，只恢复丢失的操作要比从头恢复好得多。同理，一个集群离线了再从新加入，也会错过一些操作，所以增量恢复是很重要的。
+
+在Lucene级别只有两种写操作：一个是ES对一个索引新增文档，；一个是对一个索引删除文档。（如果是更新文档实际会执行删除旧文档保存新文档）
+
+在删除时，ES会保存最近确定要被删除的文档（因为需要耗费资源），最终ES会将他们完全删除。
+
+ES会将需要重发的操作放入”分片历史保存租约（ *shard history retention leases*）“中 ，每个需要重发的操作的分片副本首先要做的就是自己创建”分片历史保存租约“。（分片副本它可以是某个分片的副本也可以是使用跨集群复制时一个从索引的分片）。每一个”分片历史保存租约“都会保存这个分片没接收到的第一个操作的序号。当分片副本接收到一个新操作时，他会增加”分片历史保存租约“里的序号，这样这个操作就不会被重新获取。
+
+一旦软删除操作没有被任何副本分片的”分片历史保存租约“持有，ElasticSearch就会丢弃这些操作。
+
+当任何一个副本异常停止更新这个”分片历史保存租约“，ES都不会删除这些操作，以便副本恢复后继续同步。但这个””分片历史保存租约“是有存在时间限制的。如果副本不能再””分片历史保存租约“到期前恢复，为了保护ES，就会将历史数据丢弃。
+
+
+
+```
+//是否开启软删除功能（6.5.0版本后才有这个配置并在7.6.0中弃用，不赞成在禁用软删除的情况下创建索引），默认true
+index.soft_deletes.enabled
+
+
+//软删除保存周期 默认12h
+index.soft_deletes.retention_lease.period
+```
+
+
+
+## 索引排序(提升查询准确性)
+
+创建一个新索引时，可以配置每个Shard中的segment如何排序。
+
+**注意：嵌套字段与索引排序不兼容，因为它们依赖于嵌套文档存储在连续的文档id中的假设，这可以通过索引排序来打破。如果在包含嵌套字段的索引上激活索引排序，将引发错误**
+
+索引排序只能在创建索引时定义一次，不许修改和创建索引后再添加
+
+```
+//排序字段
+index.sort.field
+//排序顺序
+index.sort.order
+//排序模式 min：选择最小的值；max：选择最大的值
+index.sort.mode
+//排序缺省值 _last：没有这个字段的文档排在最后；_first没有这个字段的文档排在最前面
+index.sort.missing
+```
+
+
+
+my-index-000001索引。根据date字段让Shard中的segment倒叙
+
+```
+PUT my-index-000001
+{
+  "settings": {
+    "index": {
+    //只有类型是boolean, numeric, date 以及 keyword（doc_values=true）的字段可以排序
+      "sort.field": [ "username", "date" ], 
+      "sort.order": [ "asc", "desc" ]       
+    }
+  },
+  "mappings": {
+    "properties": {
+      "username": {
+        "type": "keyword",
+        "doc_values": true
+      },
+      "date": {
+        "type": "date"
+      }
+    }
+  }
+}
+```
+
+### 提升查询准确性：
+
+ES进行查询时，如根据timestamp倒叙查找前10个.此时ES会在每个分片获取前10个，然后再将结果会合返回前10个。
+
+```
+GET /events/_search
+{
+  "size": 10,
+  "sort": [
+    { "timestamp": "desc" }
+  ]
+}
+```
+
+这时返回的结果可能不是最符合要求的，因为分片里的数据可能不是按照timestamp倒叙排序的。所以可以设置index也是按照timestamp倒叙再分片中存储。
+
+```
+PUT events
+{
+  "settings": {
+    "index": {
+      "sort.field": "timestamp",
+      "sort.order": "desc" 
+    }
+  },
+  "mappings": {
+    "properties": {
+      "timestamp": {
+        "type": "date"
+      }
+    }
+  }
+}
+```
+
+### 提升连词搜索效率
+
+通过索引排序，为了提高效率，连词依赖于这样一个事实:如果任何一个子句不匹配，那么整个连词就不匹配。通过使用索引排序，我们可以将不匹配的文档放在一起，这将有助于有效地跳过不匹配连接的大范围文档id。
+
+这个技巧只适用于低基数字段。经验法则是，您应该首先对基数低且经常用于过滤的字段进行排序。排序顺序(asc或desc)并不重要，因为我们只关心将匹配相同子句的值放在彼此靠近的位置。
+
+例如，如果你要索引出售的汽车，按燃料类型、车身类型、制造、注册年份和最后的里程进行排序可能会很有趣。
