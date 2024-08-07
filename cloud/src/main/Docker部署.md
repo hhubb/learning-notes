@@ -21,6 +21,7 @@ sudo yum install -y yum-utils device-mapper-persistent-data lvm2
 ```
 
 ![image-20240627164525739](img/image-20240627164525739.png)
+
 ## 第二步
 
 ```
