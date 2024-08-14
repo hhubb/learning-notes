@@ -10,6 +10,7 @@
         <module name="java-base-learning-notes" />
         <module name="cloud-learning-notes" />
         <module name="bigdata-learning-notes" />
+        <module name="java-springboot" />
         <module name="netty-learning-notes" />
       </profile>
     </annotationProcessing>
@@ -24,6 +25,7 @@
       <module name="cloud-learning-notes" options="-parameters" />
       <module name="java-base-learning-notes" options="-parameters" />
       <module name="java-learning-notes (1)" options="-parameters" />
+      <module name="java-springboot" options="-parameters" />
       <module name="learning-notes" options="" />
       <module name="netty-learning-notes" options="-parameters" />
       <module name="redis-learning-notes" options="-parameters" />

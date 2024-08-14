@@ -21,6 +21,7 @@
         <module>redis</module>
         <module>java-base</module>
         <module>cloud</module>
+        <module>java-springboot</module>
     </modules>
     <dependencies>
         <dependency>
