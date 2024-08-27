@@ -36,10 +36,10 @@ import java.util.regex.Pattern;
  **/
 @Slf4j
 public class FinancialWebScraper {
-    static String SEARCH_URL = "http://www.cninfo.com.cn/new/disclosure/stock?stockCode=000527&orgId=gssz0000527#latestAnnouncement";
+    static String SEARCH_URL = "http://www.cninfo.com.cn/new/disclosure/stock?stockCode=000527&orgId=gssz0000527#research";
     static String DRIVER_PATH = "C:/Users/admin/Desktop/海尔工作文档/爬虫/chromedriver-win64/chromedriver.exe";
     static String companyName = "美的电器";
-    static String savePath = "C:/Users/admin/Desktop/海尔工作文档/爬虫/非财务/";
+    static String savePath = "C:/Users/admin/Desktop/海尔工作文档/爬虫/财务报告/";
     static String parentPath = savePath + companyName;
     static String PDF_PATH = "https://static.cninfo.com.cn/finalpage/%s/%s.PDF#navpanes=0&toolbar=0&statusbar=0&pagemode=thumbs&page=1";
     static Map<String, String> downLoadFilePath = new HashMap<>();
@@ -66,6 +66,7 @@ public class FinancialWebScraper {
                     errorCount++;
                 }
             }
+            log.info(companyName + "财务报告，总计：" + totalCount + ";下载成功：" + downLoadCount + ";下载失败：" + errorCount);
             Entity entity = Entity.create("report_info")
                     .set("company_name", companyName)
                     .set("search_url", SEARCH_URL)
@@ -75,7 +76,7 @@ public class FinancialWebScraper {
                     .set("failure_info", errorInfo.toString())
                     .set("downLoad_path", parentPath);
             Db.use().insertForGeneratedKey(entity);
-            log.info(companyName + "财务报告，总计：" + totalCount + ";下载成功：" + downLoadCount + ";下载失败：" + errorCount);
+
         } catch (Exception e) {
             e.printStackTrace();
         }

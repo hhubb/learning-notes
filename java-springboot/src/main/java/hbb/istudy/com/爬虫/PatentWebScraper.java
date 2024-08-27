@@ -101,26 +101,53 @@ public class PatentWebScraper {
                 WebElement td = tdList.get(1);
                 WebElement table = td.findElement(By.tagName("table"));
                 List<WebElement> tableTrs = table.findElements(By.tagName("tr"));
-                if (tableTrs.size()<5){
+                if (tableTrs.size() < 5) {
                     continue;
                 }
-                WebElement tableTr =  tableTrs.get(4);
+                WebElement tableTr = tableTrs.get(4);
                 List<WebElement> tableTrTds = tableTr.findElements(By.tagName("td")); // 获取第一个tr中的所有td
                 if (tableTrTds.isEmpty()) {
                     continue;
                 }
+                WebElement tdd = tableTrTds.get(0);
+                List<WebElement> links = tdd.findElements(By.tagName("a"));
+                if (links.isEmpty()) {
+                    continue;
+                }
+                for (WebElement aElement : links) {
+                    // 获取每个 `a` 标签的 `href` 属性
+                    String href = aElement.getAttribute("href");
+                    if (href != null && !href.isEmpty()) {
+                        continue;
+                    }
+                    String[] pairs = href.split("&");
 
-                // 获取第一个tr中的所有td
-                WebElement spanElement = td.findElement(By.tagName("span"));
-                String fileName = spanElement.getText();
-                WebElement aElement = td.findElement(By.tagName("a"));
-                String href = aElement.getAttribute("href");
-                String pdfId = aElement.getAttribute("data-id");
-                String date = extractDate(href);
-                String pdfPath = String.format(PDF_PATH, date, pdfId);
-                log.info(fileName + ":" + String.format(PDF_PATH, date, pdfId));
-                downLoadFilePath.put(fileName, pdfPath);
-                fileHrefPath.put(fileName, href);
+                    // 存储参数的变量
+                    String ptName = null;
+                    String id = null;
+
+                    // 解析每个参数
+                    for (String pair : pairs) {
+                        int idx = pair.indexOf("=");
+                        if (idx > 0) {
+                            String key = pair.substring(0, idx);
+                            String value = pair.substring(idx + 1);
+                            // URL 解码
+                            if (key.equals("PTname")) {
+                                ptName = value;
+                            } else if (key.equals("id")) {
+                                id = value;
+                            }
+                        }
+                    }
+                    if (ptName == null || id == null) {
+                        log.info("专利获取异常" + ptName + id);
+                        continue;
+                    }
+
+
+
+                }
             }
 
 
@@ -189,7 +216,7 @@ public class PatentWebScraper {
     public static boolean check(WebDriver driver, By selector) {
         try {
             WebElement webElement = driver.findElement(selector);
-            String disabled = webElement.getAttribute("disabled");
+            String disabled = webElement.getAttribute("aria-disabled");
             if (null != disabled && disabled.equals("true")) {
                 return false;
             }
