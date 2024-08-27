@@ -89,3 +89,240 @@ Query context中为查询计算的分数表示为单精度浮点数;它们只有
 2. weight：可以用来矫正函数中每个过滤条件的得分，公式是weight*文档得分
 3. boost_mode：指定boost系数的值如何与函数得分组合计算分数，，类型有：multiply、sum、avg、first、max、min。
 4. min_score：最终返回时会过滤掉最终得分比min_score值小的文档
+
+# 全文本查询
+可以查询被分词器分词的text类型的字段。查询的内容通过同一个分词器（在索引期间对字段指定了的分词器）进行处理后进行搜索，
+## intervals query
+间隔查询，允许对匹配词的顺序和接近度进行细粒度控制。
+```
+POST my_d_mapping_001/_doc
+{
+  "my_text":"my favorite food is cold porridge",
+  "content":"hot water"
+}
+
+POST my_d_mapping_001/_doc
+{
+  "my_text":"my favorite food is hot water",
+  "content":"cold porridge"
+}
+ 
+POST my_d_mapping_001/_doc
+{
+  "my_text":"my very favorite food is hot water",
+  "content":"hot water"
+}
+ 
+GET my_d_mapping_001/_search
+{
+  "query": {
+    "intervals" : {
+      "my_text" : {
+        "all_of" : {
+          "ordered" : true,
+          "intervals" : [
+            {
+              "match" : {
+                "query" : "my favorite food",
+                "max_gaps" : 0,
+                "ordered" : true
+              }
+            },
+            {
+              "any_of" : {
+                "intervals" : [
+                  { "match" : { "query" : "hot water" } },
+                  { "match" : { "query" : "cold porridge" } }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+```
+![img_11.png](img_11.png)
+![img_12.png](img_12.png)
+参数
+1. `field` : 必要参数、顶级参数，指定查询哪个字段。
+2. match : 用于构造查询指定的匹配规则。 
+```
+内含参数：
+`query` 必填，指定查询的文本内容。
+`max_gaps` 选填，最大间隔数，用于标识查询的文本内容可以有多大的间隙，默认是-1，表示只要查询的字段中包含查询文本分此后的词即可。0表示必须紧挨着。n表示可以分隔成n隔间；
+`ordered` 选填，默认false，表示是否匹配项必须按指定的顺序出现
+`analyzer` 选填，指定使用哪个分词器分词，默认使用`field`使用的分词器
+`filter` 选填，可以继续包含`filter`过滤条件
+`use_field`选填， 如果指定查询的字段就换成`use_field`指定的字段，`analyzer`也是用这个字段的分词器作为默认分词器。
+```
+3. prefix : 前缀匹配
+最多只能指定128个terms查修
+```
+内含参数：
+`prefix`  必填，指定查询的前缀字符串
+`analyzer` 选填，指定使用哪个分词器分词，默认使用`field`使用的分词器
+`use_field`选填， 如果指定查询的字段就换成`use_field`指定的字段，`analyzer`也是用这个字段的分词器作为默认分词器。
+```
+4. wildcard ：  通配符查询
+   最多只能指定128个terms查修
+```
+内含参数：
+`wildcard`  必填，可以使用`? *` 进行模糊查询。（避免以*或?开头。这可能会增加查找匹配项所需的迭代，并降低搜索性能。）
+`analyzer` 选填，指定使用哪个分词器分词，默认使用`field`使用的分词器
+`use_field`选填， 如果指定查询的字段就换成`use_field`指定的字段，`analyzer`也是用这个字段的分词器作为默认分词器。
+```
+5. fuzzy ： 相似词查询
+定义相似词查询规则，可以搜索出与查询内容相似的词所在的文档，最多只能指定128个terms查修
+```
+内含参数：
+`term`  必填，term查询
+`prefix_length` 选填，默认值0，指定可变字符的开始位置
+`transpositions`选填，默认值true,指定是否可以交换字符顺序
+`fuzziness`选填，默认值auto,指定可变字符的长度
+`analyzer` 选填，指定使用哪个分词器分词，默认使用`field`使用的分词器
+`use_field`选填， 如果指定查询的字段就换成`use_field`指定的字段，`analyzer`也是用这个字段的分词器作为默认分词器。
+```
+6. all_of ： 全部匹配
+表示以下所含的所有规则都要匹配
+```
+`intervals`  必填，是个数组。里面是子规则条件，返回的文档要满足里面所有的子规则
+`max_gaps` 选填，最大间隔数，用于标识查询的文本内容可以有多大的间隙，默认是-1，表示只要查询的字段中包含查询文本分此后的词即可。0表示必须紧挨着。n表示可以分隔成n隔间；
+`ordered` 选填，默认false，表示是否匹配项必须按指定的顺序出现
+`filter` 选填，可以继续包含`filter`过滤条件
+```
+7. any_of ： 任意匹配
+表示以下所含的所有规则只要匹配任意一个或多个
+```
+`intervals`  必填，是个数组。里面是子规则条件，返回的文档要满足里面任意一个的子规则
+`filter` 选填，可以继续包含`filter`过滤条件
+```
+8. filter ： 过滤器
+基于前面的查询过滤出满足的文档
+```
+`after`  选填，查询，返回在query的文本内容前包含after指定的文本的文档
+`before` 选填，查询，返回在query的文本内容后包含after指定的文本的文档
+`containing` 选填，查询，返回在query的文本内容中包含containing指定的文本的文档
+`not_containing` 选填，查询，返回在query的文本内容中不包含not_containing指定的文本的文档
+`contained_by` 选填，查询，返回在query的文本内容且被涵盖在contained_by指定的文本的文档
+`not_contained_by` 选填，查询，返回在query的文本内容且不被涵盖在not_contained_by指定的文本的文档
+## 以下两个没懂
+`overlapping` 选填，查询，返回在query的文本内容且与overlapping指定的文本重合的文档
+`not_overlapping` 选填，查询，返回在query的文本内容且与overlapping指定的文本不重合的文档
+`script` 选填，查询，返回在query的文本内容且满足脚本内容的文档
+```
+after、before示例
+```
+POST my_d_mapping_001/_doc
+{
+  "my_text":"my favorite food is hot salty porridge ",
+  "content":"hot porridge"
+}
+POST my_d_mapping_001/_doc
+{
+  "my_text":"my favorite food is hot porridge and salty",
+  "content":"hot porridge"
+}
+POST my_d_mapping_001/_doc
+{
+ "my_text": "my favorite food is salty hot  porridge ",
+  "content":"hot porridge"
+}
+GET my_d_mapping_001/_search
+{
+  "query": {
+    "intervals" : {
+      "my_text" : {
+        "match" : {
+          "query" : "hot porridge",
+          "max_gaps" : 0,
+          "filter" : {
+            "after":{
+              "match" : {
+                "query" : "salty"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+GET my_d_mapping_001/_search
+{
+  "query": {
+    "intervals" : {
+      "my_text" : {
+        "match" : {
+          "query" : "hot porridge",
+          "max_gaps" : 0,
+          "filter" : {
+            "before":{
+              "match" : {
+                "query" : "salty"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+![img_13.png](img_13.png)
+not_contained_by、contained_by示例
+```
+POST my_d_mapping_001/_doc
+{
+  "my_text":"my favorite food is hot water",
+  "content":"cold porridge"
+}
+POST my_d_mapping_001/_doc
+{
+ "my_text": "my favorite food is salty hot  porridge ",
+  "content":"hot porridge"
+}
+GET my_d_mapping_001/_search
+{
+  "query": {
+    "intervals" : {
+      "my_text" : {
+        "match" : {
+          "query" : "hot ",
+          "max_gaps" : -1,
+          "filter" : {
+            "not_contained_by":{
+              "match" : {
+                "query" : "hot porridge "
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+GET my_d_mapping_001/_search
+{
+  "query": {
+    "intervals" : {
+      "my_text" : {
+        "match" : {
+          "query" : "hot ",
+          "max_gaps" : -1,
+          "filter" : {
+            "contained_by":{
+              "match" : {
+                "query" : "hot porridge "
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+![img_14.png](img_14.png)
