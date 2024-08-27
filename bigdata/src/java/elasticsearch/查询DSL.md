@@ -59,3 +59,33 @@ Query context中为查询计算的分数表示为单精度浮点数;它们只有
 2. 将任何其他匹配子句的分数乘以`tie_breaker`值。
 3. 将最高分数添加到相乘的分数中。
 如果`tie_breaker`值大于 0.0，则所有匹配子句都计算在内，但得分最高的子句计数最多。
+
+## Function score query
+本质上是定义各个过滤条件的权重从而自定义返回的分数。
+![img_10.png](img_10.png)
+分数计算规则：
+1. 首先根据query语句进行查询
+2. 得到符合query语句的文档，根据functions中定义的filter过滤符合的文档，得到匹配的文档初始分数filterScore为weight* `Function score` 如果没有指定`Function score` 默认为1。
+3. 如果设置了max_boost，filterScore>max_boost则按照max_boost设置的数值返回
+4. 如果一个文档满足多个条件也就是有多个filterScore，则根据score_mode字段计算当前文档的initScore
+5. boost为基础系数，根据boost_mode字段和initScore计算最终分数finallyScore
+6. 如果设置了min_score，finallyScore大于min_score，则返回这条文档。
+
+子查询类型：
+1. query：与正常的query一样
+2. functions： 
+• script_score：通过脚本从文档中的数值类型的字段来定义分数
+• weight:给满足函数的文档得分进行权重赋值，计算方式：分数*权重
+• random_score：随机分数，默认情况下分数是[0,1)且每次搜索分数都不固定，如果希望固定通过seed和field两个字段，最终分数的计算会基于seed
+                 位于同一分片内且具有相同`field`值的文档将获得相同的分数，因此通常希望为所有文档使用具有唯一值的字段。`field`推荐的默认值为`_seq_no`,但更新文档也会更新`_seq_no`所以最终的分数也会被更新 
+• field_value_factor：与script_score类型，但是可以避免脚本的开销，适合需要根据字段值进行简单的分数计算。
+                       包含参数：field文档中的字段名、factor影响因子默认为1、modifier计算方式（none, log, log1p, log2p, ln, ln1p, ln2p, square, sqrt, or reciprocal. 默认 to none.）、missing缺省值 
+• decay functions: 衰减函数// todo
+
+
+
+参数：
+1. score_mode：根据定义的函数对每个文档进行评分。参数score_mode指定如何组合计算分数，类型有：multiply、sum、avg、first、max、min。如 一个文档符合函数A score=10， weight=2 ，函数B score=20，weight=3，此时score_mode为sum，那么分数为（10*2+20*3）/(2+3)
+2. weight：可以用来矫正函数中每个过滤条件的得分，公式是weight*文档得分
+3. boost_mode：指定boost系数的值如何与函数得分组合计算分数，，类型有：multiply、sum、avg、first、max、min。
+4. min_score：最终返回时会过滤掉最终得分比min_score值小的文档
