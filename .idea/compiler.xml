@@ -8,9 +8,10 @@
         <outputRelativeToContentRoot value="true" />
         <module name="redis-learning-notes" />
         <module name="java-base-learning-notes" />
+        <module name="java-springboot-learning-notes" />
+        <module name="java-springboot" />
         <module name="cloud-learning-notes" />
         <module name="bigdata-learning-notes" />
-        <module name="java-springboot" />
         <module name="netty-learning-notes" />
       </profile>
     </annotationProcessing>
