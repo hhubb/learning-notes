@@ -107,51 +107,170 @@ GET my_d_mapping_001/_search
    //todo 与Multi-match区别
 ## Multi-match query
 多匹配查询:可以以构建一个查询条件去匹配多个字段。
-类型
-`type` multi_match查询在内部执行的方式取决于类型参数
-1. best_fields 最佳匹配字段，优先让搜索的文本在同一个字段中匹配。
 参数：
-tie_breaker 平衡分数计算,计算规则：最佳匹配字段的分数加上所有其他匹配字段的tie_breaker * _score。
-同样也有和match query 一样的参数：analyzer, boost, operator, minimum_should_match, fuzziness, lenient, prefix_length, max_expansions, fuzzy_rewrite, zero_terms_query, auto_generate_synonyms_phrase_query and fuzzy_transpositions。
-2. most_fields 
-
-
+1. `fields` 必填。字段支持通配符以及定义字段匹配分数系数。` "fields": [ "title", "*_name" ] ` `"fields" : [ "subject^3", "message" ] `
+2. tie_breaker 平衡分数计算,计算规则：最佳匹配字段的分数加上所有其他匹配字段的tie_breaker * _score。
+3. 同样也有和match query 一样的参数：analyzer, boost, operator, minimum_should_match, fuzziness, lenient, prefix_length, max_expansions, fuzzy_rewrite, zero_terms_query, auto_generate_synonyms_phrase_query and fuzzy_transpositions。
+4. `type` 选填。multi_match查询在内部执行的方式取决于类型参数
+默认`best_fields` 
 ```
+POST my_d_mapping_001/_doc
 {
-  "query": {
-    "multi_match" : {
-      "query":      "brown fox",
-      "type":       "best_fields",
-      "fields":     [ "subject", "message" ],
-      "tie_breaker": 0.3
-    }
-  }
+ "my_text": "my favorite food is salty apple",
+  "content":"hot  apple"
+}
+POST my_d_mapping_001/_doc
+{
+ "my_text": "my favorite food is water",
+  "content":"hot"
+}
+POST my_d_mapping_001/_doc
+{
+ "my_text": "my favorite food is salty apple",
+  "content":"hot water"
 }
 ```
-等价于
+**best_fields**
+通常，best_fields类型使用单个最佳匹配字段的分数，但如果指定了tie_breaker，则它按如下方式计算分数:
+最佳匹配字段的分数加上所有其他匹配字段的tie_breaker * _score
+最佳字段，查找fields集合中的任意一个字段可以匹配查询文本的文档，但使用最佳字段中的_score
 ```
+GET my_d_mapping_001/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "hot water",
+      "type": "best_fields", 
+      "fields": ["my_text","content"]
+    }
+     }
+}
+```
+等价于dis_max查询
+```
+GET my_d_mapping_001/_search
 {
   "query": {
     "dis_max": {
       "queries": [
-        { "match": { "subject": "brown fox" }},
-        { "match": { "message": "brown fox" }}
-      ],
-      "tie_breaker": 0.3
+        { "match": { "my_text": "hot water" }},
+        { "match": { "content": "hot water" }}
+      ]
+   
     }
   }
+}
+```
+![img_21.png](img_21.png)
+![img_19.png](img_19.png)
+**most_fields**  
+最多字段，查找fields集合中的任意一个字段可以匹配查询文本的文档，并组合每个字段匹配的_score。
+适合查询不同字段不同分词器，找出最符合搜索文本内容的匹配度最高的文本。
+```
+GET my_d_mapping_001/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "hot  water",
+      "type": "most_fields", 
+      "fields": ["my_text","content"]
+    }
+     }
+}
+```
+![img_20.png](img_20.png)
+与best_fields比对，其实返回的内容都一样，但分数不同。best_fields只返回最大分数。most_fields会将所有字段的分数累加，所以这个例子可以看到most_fields匹配到的第一个文档分数更高。
+等价于Should查询
+```
+GET my_d_mapping_001/_search
+{
+  "query": {
+    "bool": {
+      "should": [
+       { "match": { "my_text": "hot water" }},
+        { "match": { "content": "hot water" }}
+      ]
+    }
+  }
+}
+```
+![img_22.png](img_22.png)
+**cross_fields** //todo没看懂
+使用相同的分析器将字段当作一个大字段来处理。查找任何字段中的每个单词。
+cross_fields类型对于需要匹配多个字段的结构化文档特别有用。例如，当在first_name和last_name字段中查询“Will Smith”时，最佳匹配可能是在一个字段中包含“Will”，而在另一个字段中包含“Smith”。
+与**best_fields**不同的是：1. operator和minimum_should_match是按字段应用的，而不是按术语；2. 与相关性有关:first_name和last_name字段中不同的术语频率可能会产生意想不到的结果。
+换句话说，**所有术语必须出现在文档匹配的至少一个字段中**。(将此与best_fields和most_fields使用的逻辑进行比较。)
+
+
+**phrase**
+对每个字段运行match_phrase查询，并使用最佳字段中的_score。
+与**best_fields**基本一致，但搜索文本以短语的形式去进行匹配
+
+**phrase_prefix**
+对每个字段运行match_phrase_prefix查询，并使用最佳字段的_score
+与**best_fields**基本一致，但搜索文本以短语前缀的形式去进行匹配
+```
+GET my_d_mapping_001/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "hot water",
+      "type": "phrase_prefix", 
+      "fields": ["my_text","content"]
+    }
+     }
+}
+```
+等价于dis_max查询
+```
+GET my_d_mapping_001/_search
+{
+  "query": {
+    "dis_max": {
+      "queries": [
+        { "match_phrase_prefix": { "my_text": "hot water" }},
+        { "match_phrase_prefix": { "content": "hot water" }}
+      ]
+   
+    }
+  }
+}
 ```
 
 
-| 类型 | 是否为默认 | 含义                        |        |
-|-----|-------|---------------------------|--------|
-|   best_fields  | Y     | 最佳匹配字段，优先让搜索的文本在同一个字段中匹配。 | `````` |
-|  most_fields   | N     |                           |        |
-|  cross_fields   | N        |                           |        |
-| phrase  |  N      |                           |        |
-|  phrase_prefix   |   N      |                           |        |
-|  bool_prefix   |   N      |                           |        |
-2. 
+
+**bool_prefix**
+与**best_fields**基本一致，在每个字段上创建一个match_bool_prefix查询，并组合每个字段的_score。
+```
+GET my_d_mapping_001/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "hot water",
+      "type": "bool_prefix", 
+      "fields": ["my_text","content"]
+    }
+     }
+}
+```
+等价于dis_max查询
+```
+GET my_d_mapping_001/_search
+{
+  "query": {
+    "dis_max": {
+      "queries": [
+        { "match_bool_prefix": { "my_text": "hot water" }},
+        { "match_bool_prefix": { "content": "hot water" }}
+      ]
+   
+    }
+  }
+}
+```
+
+
+
 
 
 
