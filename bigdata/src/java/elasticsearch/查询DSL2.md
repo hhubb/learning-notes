@@ -106,8 +106,53 @@ GET my_d_mapping_001/_search
 ![img_18.png](img_38.png)
    //todo 与Multi-match区别
 ## Multi-match query
-多匹配查询
-//todo
+多匹配查询:可以以构建一个查询条件去匹配多个字段。
+类型
+`type` multi_match查询在内部执行的方式取决于类型参数
+1. best_fields 最佳匹配字段，优先让搜索的文本在同一个字段中匹配。
+参数：
+tie_breaker 平衡分数计算,计算规则：最佳匹配字段的分数加上所有其他匹配字段的tie_breaker * _score。
+同样也有和match query 一样的参数：analyzer, boost, operator, minimum_should_match, fuzziness, lenient, prefix_length, max_expansions, fuzzy_rewrite, zero_terms_query, auto_generate_synonyms_phrase_query and fuzzy_transpositions。
+2. most_fields 
+
+
+```
+{
+  "query": {
+    "multi_match" : {
+      "query":      "brown fox",
+      "type":       "best_fields",
+      "fields":     [ "subject", "message" ],
+      "tie_breaker": 0.3
+    }
+  }
+}
+```
+等价于
+```
+{
+  "query": {
+    "dis_max": {
+      "queries": [
+        { "match": { "subject": "brown fox" }},
+        { "match": { "message": "brown fox" }}
+      ],
+      "tie_breaker": 0.3
+    }
+  }
+```
+
+
+| 类型 | 是否为默认 | 含义                        |        |
+|-----|-------|---------------------------|--------|
+|   best_fields  | Y     | 最佳匹配字段，优先让搜索的文本在同一个字段中匹配。 | `````` |
+|  most_fields   | N     |                           |        |
+|  cross_fields   | N        |                           |        |
+| phrase  |  N      |                           |        |
+|  phrase_prefix   |   N      |                           |        |
+|  bool_prefix   |   N      |                           |        |
+2. 
+
 
 
 ## Query string query
@@ -133,3 +178,4 @@ GET my_d_mapping_001/_search
 17. `operator` ：选填，只有两个选择OR和AND，默认OR。表示query中的文本被分成多个词后是使用OR去匹配还是AND匹配。
 18. `minimum_should_match` ：选填，要返回文档必须匹配的最小子句数。如`I love china`经过分词后,相当于有`I` OR `love`OR `china`,三个子句。minimum_should_match配置多少就要返回匹配这些子句最小最小子句数的文档。
 19. `zero_terms_query` ：选填，none 或者 all，默认none 。如果query中的文本经过分词器处理后，没有任何词（如全是停止词所以将词全部移除），none表示不返回任何文档，all返回所有文档。
+
