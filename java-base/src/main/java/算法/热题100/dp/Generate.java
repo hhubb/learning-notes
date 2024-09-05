@@ -35,8 +35,5 @@ public class Generate {
         return res;
     }
 
-    public static void main(String[] args) {
-        generate(5);
-    }
 
 }
