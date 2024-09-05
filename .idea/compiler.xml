@@ -15,22 +15,14 @@
         <module name="netty-learning-notes" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="java-learning-notes (1)" target="1.8" />
-      <module name="redis-learning-notes (1)" target="1.8" />
-    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="bigdata-learning-notes" options="-parameters" />
       <module name="cloud-learning-notes" options="-parameters" />
       <module name="java-base-learning-notes" options="-parameters" />
-      <module name="java-learning-notes (1)" options="-parameters" />
-      <module name="java-springboot" options="-parameters" />
-      <module name="learning-notes" options="" />
       <module name="netty-learning-notes" options="-parameters" />
       <module name="redis-learning-notes" options="-parameters" />
-      <module name="redis-learning-notes (1)" options="-parameters" />
     </option>
   </component>
 </project>

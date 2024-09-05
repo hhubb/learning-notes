@@ -5,6 +5,18 @@
     <groupId>hbb.istudy.com</groupId>
     <artifactId>java-base-learning-notes</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>7</source>
+                    <target>7</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
     <name>java-base</name>
     <description>java学习笔记</description>
     <parent>
