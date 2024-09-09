@@ -21,6 +21,7 @@
       <module name="bigdata-learning-notes" options="-parameters" />
       <module name="cloud-learning-notes" options="-parameters" />
       <module name="java-base-learning-notes" options="-parameters" />
+      <module name="java-springboot" options="-parameters" />
       <module name="netty-learning-notes" options="-parameters" />
       <module name="redis-learning-notes" options="-parameters" />
     </option>
