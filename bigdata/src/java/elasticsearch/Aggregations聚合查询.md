@@ -129,4 +129,51 @@ PUT my_d_mapping_001/_doc/2?refresh
 ### date histogram aggregation
 针对日期字段进行直方图分析，可以使用日期表达式和函数。
 桶计算公式：`bucket_key = Math.floor(value / interval) * interval`
+参数
+1. `field` : 必要参数、指定查询哪个字段。
+2. `calendar_interval` : 选填，根据日历单位进行间隔，不支持2d这种方式。minute, 1m、hour, 1h、day, 1d、week, 1w、month, 1M、quarter, 1q、year, 1y
+3. `fixed_interval` 选填，固定时间间隔支持2d这种方式。milliseconds (ms)、seconds (s)、minutes (m)、hours (h)、days (d)
+4. `format` 选填，时间格式
+5. `time_zone` 选填，时区
+6. `order ` 选填，排序可以根据桶的key或者value进行排序
+7. `offset` 选填，偏移量使用offset参数可以将每个桶的起始值按指定的正偏移量(+)或负偏移量(-)持续时间进行更改，例如一小时为1h，一天为1d。
+8. `missing` 选填，缺省值，如果一个文档没有这个字段，默认情况下，它们将被忽略。设置这参数后使用缺省值进行统计。
+
+如果文档中的数据与您想要聚合的数据不完全匹配，请使用运行时字段。
+如:促销收入应在销售日后一天确认
+```
+POST /sales/_search?size=0
+{
+  "runtime_mappings": {
+    "date.promoted_is_tomorrow": {
+      "type": "date",
+      "script": """
+        long date = doc['date'].value.toInstant().toEpochMilli();
+        if (doc['promoted'].value) {
+          date += 86400;
+        }
+        emit(date);
+      """
+    }
+  },
+  "aggs": {
+    "sales_over_time": {
+      "date_histogram": {
+        "field": "date.promoted_is_tomorrow",
+        "calendar_interval": "1M"
+      }
+    }
+  }
+}
+```
+
+
 ### Auto-interval date histogram aggregation
+一个类似于Date直方图的多桶聚合，不同之处是没有提供一个间隔作为每个桶的宽度，而是提供了一个桶的目标数量，指示所需的桶的数量，并自动选择桶的间隔以最好地实现该目标。返回的桶数将始终小于或等于此目标数。
+参数
+1. `field` : 必要参数、指定查询哪个字段。
+2. `buckets` : 必要参数，聚合桶数量，ES会根据需要分成的桶的数量自动匹配时间间隔
+3. `format` 选填，时间格式
+4. `time_zone` 选填，时区
+5. `minimum_interval` 选填，最小时间间隔单位year、month、day、hour、minute、second
+6`missing` 选填，缺省值，如果一个文档没有这个字段，默认情况下，它们将被忽略。设置这参数后使用缺省值进行统计。
