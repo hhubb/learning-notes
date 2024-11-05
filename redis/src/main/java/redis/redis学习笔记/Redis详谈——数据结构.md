@@ -33,7 +33,9 @@ Sorted Sets数据结构：
 使用**跳表（SkipList）**和**哈希表**
 ![img.png](img.png)
 
-![](img/Redis数据类型-数据结构映射关系.jpg)
+![img_4.png](img_4.png)
+
+
 ## ZipList（压缩列表）
 压缩列表是一种节省空间的连续存储结构，可以减少内存碎片，压缩列表中，每个元素有两恶搞相邻节点，分别**存储元素和分数**。
 ### 内存使用率高
@@ -50,7 +52,7 @@ Ziplist 中每个元素的长度信息是显式存储的，这意味着访问特
 
 
 ## QuickList（快速列表）
-3.0版本实现了quicklist结构，结合了链表和 ziplist 各自的优势。简单来说，一个 quicklist 就是一个双向链表，而链表中的每个元素quicklistNode又是一个 ziplist。
+3.0版本实现了quicklist结构，结合了链表和 ziplist 各自的优势。简单来说，一个 quicklist 就是一个双向链表，而链表中的每个元素quicklistNode又是一个 zipList。7.0以后将ziplist换成listPack。
 ![img_1.png](img_1.png)
 quicklist是个节点为ziplist的双向链表，其通过控制quicklistNode结构里的压缩列表的大小或者元素个数，要是某个ziplist的元素个数多了，会采用新增节点的方法。从而来减少连锁更新带来的性能影响，但这并没有完全解决连锁更新的问题，而且因为quicklist使用节点结构指向了每个ziplist,这又增加了内存开销。
 所以在Redis5.0开始加入新的数据结构Listpack，用以进一步避免ziplist连锁更新的问题。
@@ -59,7 +61,11 @@ quicklist是个节点为ziplist的双向链表，其通过控制quicklistNode结
 ## Listpack（紧凑列表）
 紧凑列表，用一块连续的内存空间来紧凑保存数据，同时使用多种编码方式，表示不同长度的数据（字符串、整数）。**在每个listpack节点中，不再保存前一个节点的长度，所以也就不存在出现连锁更新的情况了。**
 Redis7.0 才将 listpack 完整替代 ziplist。
-![img_2.png](img_2.png)
+![img_3.png](img_3.png)
+tot-bytes： 整个结构的字节数量，包括头部以及尾部，占4个字节。
+num-elements：元素的数量，占2个字节，最大表示65535个，超过则需要遍历获取长度。
+entry-N：具体的每个元素。entry内结构：encoding-type、element-data、element-total-len
+0xFF：结尾标志，占1个字节，全是1。
 
 
 ## SkipList（跳表）
@@ -76,8 +82,11 @@ Redis7.0 才将 listpack 完整替代 ziplist。
 ZipList中元素个数多了，查询效率就会降低，如果在ZipList进行修改或者新增数据，ZipList占用的内存空间还需要重新分配，更糟糕的是Zip新增或者修改的时候，会导致后续元素中记录的previous_entry_length（前一元素长度）都发生变化，从而引起连锁反应，导致每个元素空间都需要重新分配，更加导致访问性能下降。
 
 ## listpack 如何避免连锁更新？
-listpack是沿用了ziplist紧凑型的内存布局。listpack每个列表项都只记录自己的长度，不会像 ziplist 的列表项会记录前一项的长度。所以在 listpack 中新增或修改元素，只会涉及到列表项自身的操作，不会影响后续列表项的长度变化，进而避免连锁更新。
+listpack是沿用了ziplist紧凑型的内存布局,一样都是为了节约内存。listpack每个列表项都只记录自己的长度，不会像 ziplist 的列表项会记录前一项的长度。所以在 listpack 中新增或修改元素，只会涉及到列表项自身的操作，不会影响后续列表项的长度变化，进而避免连锁更新。
+
 
 ## listpack替代了quicklist吗？
 在Redis 7.0版本之前，quicklist是由双向链表和压缩列表构成的。然而，在Redis 7.0版本中，quicklist的底层实现由双向链表和压缩列表变为了由双向链表和listpack构成的结构。
 这表明，虽然listpack在Redis 7.0版本中被引入并用于替代压缩列表（ziplist）的部分功能，但quicklist的结构仍然存在，只是其中的压缩列表部分被listpack所替代。因此，listpack并没有完全替代quicklist，而是作为quicklist的一部分，改变了其原有的实现方式‌
+
+![img_5.png](img_5.png)
