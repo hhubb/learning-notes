@@ -31,10 +31,10 @@
 
 
 ### Hive 和 RDBMS（[关系数据库]管理系统）的对比
-![img_13.png](img_13.png)
+![img_13.png](../img_13.png)
 
 ## Hive架构
-![img_14.png](img_14.png)
+![img_14.png](../img_14.png)
 
 用户接口主要有三个：CLI、Client、WebUI
 元数据存储：通常在关系型数据库：Mysql、Derby
@@ -169,7 +169,7 @@ select uid,commentid,recommentid,month,day from tmp;
  set hive.exec.dynamic.partition.mode=nonstrict;
 ```
 ### 静态分区和动态分区的区别
-![img_24.png](img_24.png)
+![img_24.png](../img_24.png)
 另外动态分区的值是MapReduce任务在reduce运行阶段确定的，也就是所有的记录都会distribute by，相同字段(分区字段)的map输出会发到同一个reduce节点去处理，如果数据量大，这是一个很弱的运行性能。
 而静态分区在编译阶段就确定了，不需要reduce任务处理。所以如果实际业务场景静态分区能解决的，尽量使用静态分区即可。
 ### 分区使用注意事项
@@ -243,7 +243,7 @@ alter table dpdw_traffic_base drop partition(sp_test='r_ready=91\;r_load=351');
 窗口函数（Window functions）是一种SQL函数，非常适合于数据分析，因此也叫做OLAP函数，其最大特点是：输入值是从SELECT语句的结果集中的一行或多行的“窗口”中获取的。你也可以理解为窗口有大有小（行有多有少）。
 通过OVER子句，窗口函数与其他SQL函数有所区别。如果函数具有OVER子句，则它是窗口函数。如果它缺少OVER子句，则它是一个普通的聚合函数。
 窗口函数可以简单地解释为类似于聚合函数的计算函数，但是通过GROUP BY子句组合的常规聚合会隐藏正在聚合的各个行，最终输出一行，窗口函数聚合后还可以访问当中的各个行，并且可以将这些行中的某些属性添加到结果集中。 
-![img_15.png](img_15.png)
+![img_15.png](../img_15.png)
 为了更加直观感受窗口函数，我们通过sum聚合函数进行普通常规聚合和窗口聚合，一看效果。 
 ```aidl
 ----sum+group by普通常规聚合操作------------
@@ -252,7 +252,7 @@ select sum(salary) as total from employee group by dept;
 ----sum+窗口函数聚合操作------------
 select id,name,deg,salary,dept,sum(salary) over(partition by dept) as total from employee; 
 ```
-![img_16.png](img_16.png)
+![img_16.png](../img_16.png)
 ### 窗口函数语法
 ```
 unction(arg1,..., argn) OVER ([PARTITION BY <...>] [ORDER BY <....>] [<window_expression>])
@@ -270,7 +270,7 @@ unction(arg1,..., argn) OVER ([PARTITION BY <...>] [ORDER BY <....>] [<window_ex
 --[<window_expression>] 用于指定每个窗口中 操作的数据范围 默认是窗口中所有行 
 ```
 ### 案例：网站用户页面浏览次数分析 
-![img_17.png](img_17.png)
+![img_17.png](../img_17.png)
 在Hive中创建两张表表，把数据加载进去用于窗口分析。 
 ```aidl
 ---建表并且加载数据
@@ -327,7 +327,7 @@ select cookieid,createtime,pv,
 sum(pv) over(partition by cookieid order by createtime) as current_total_pv
 from website_pv_info; 
 ```
-![img_18.png](img_18.png)
+![img_18.png](../img_18.png)
 #### 窗口表达式
 我们知道，在sum(...) over( partition by... order by ... )语法完整的情况下，进行的累积聚合操作，默认累积聚合行为是：从第一行聚合到当前行。
 Window expression窗口表达式给我们提供了一种控制行范围的能力，比如向前2行，向后3行。
@@ -386,7 +386,7 @@ ROW_NUMBER() OVER(PARTITION BY cookieid ORDER BY pv DESC) AS rn3
 FROM website_pv_info
 WHERE cookieid = 'cookie1'; 
 ```
-![img_19.png](img_19.png)
+![img_19.png](../img_19.png)
 上述这三个函数用于分组TopN的场景非常适合。
 
 ```aidl
@@ -399,7 +399,7 @@ pv,
 ROW_NUMBER() OVER(PARTITION BY cookieid ORDER BY pv DESC) AS seq
 FROM website_pv_info) tmp where tmp.seq <4; 
 ```
-![img_20.png](img_20.png)
+![img_20.png](../img_20.png)
 还有一个函数，叫做ntile函数，其功能为：将每个分组内的数据分为指定的若干个桶里（分为若干个部分），并且为每一个桶分配一个桶编号。
 如果不能平均分配，则优先分配较小编号的桶，并且各个桶中能放的行数最多相差1。
 有时会有这样的需求:如果数据排序后分为三部分，业务人员只关心其中的一部分，如何将这中间的三分之一数据拿出来呢?NTILE函数即可以满足。
@@ -413,7 +413,7 @@ NTILE(3) OVER(PARTITION BY cookieid ORDER BY createtime) AS rn2
 FROM website_pv_info
 ORDER BY cookieid,createtime;
 ```
-![img_21.png](img_21.png)
+![img_21.png](../img_21.png)
 
 ```aidl
 --需求：统计每个用户pv数最多的前3分之1天。
@@ -426,7 +426,7 @@ SELECT * from
      NTILE(3) OVER(PARTITION BY cookieid ORDER BY pv DESC) AS rn
  FROM website_pv_info) tmp where rn =1;
 ```
-![img_22.png](img_22.png)
+![img_22.png](../img_22.png)
 #### 窗口分析函数
 LAG(col,n,DEFAULT) 用于统计窗口内往上第n行值
 第一个参数为列名，第二个参数为往上第n行（可选，默认为1），第三个参数为默认值（当往上第n行为NULL时候，取默认值，如不指定，则为NULL）；
@@ -472,4 +472,4 @@ ROW_NUMBER() OVER(PARTITION BY cookieid ORDER BY createtime) AS rn,
 LAST_VALUE(url) OVER(PARTITION BY cookieid ORDER BY createtime) AS last1
 FROM website_url_info; 
 ```
-![img_23.png](img_23.png)
+![img_23.png](../img_23.png)
