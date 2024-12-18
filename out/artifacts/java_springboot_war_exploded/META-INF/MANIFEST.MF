@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Created-By: IntelliJ IDEA
+Built-By: admin
+Build-Jdk: Oracle OpenJDK version 1.8.0_351
+Implementation-Title: java-springboot
+Implementation-Version: 0.0.1-SNAPSHOT
+Implementation-Vendor-Id: hbb.istudy.com
+Main-Class: ${start-class}
+

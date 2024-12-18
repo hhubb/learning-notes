@@ -1,3 +1,4 @@
+## 部署JDK
 I、安装jdk
 
 1、下载jdk1.8
@@ -43,19 +44,19 @@ source /etc/profile
 ```
 
 别忘记在终端输入：java，如果出现一堆说明就是成功了，如果没出现，就找一下问题
+## 部署JDKhadoop
+II、安装hadoop3.2.4
 
-II、安装hadoop2.7.7
-
-1、下载hadoop2.7
+1、下载hadoop3.2.4
 
 ```
-wget  --no-cookies --no-check-certificate https://mirrors.tuna.tsinghua.edu.cn/apache/hadoop/common/hadoop-2.7.7/hadoop-2.7.7.tar.gz
+wget  --no-cookies --no-check-certificate https://mirrors.tuna.tsinghua.edu.cn/apache/hadoop/common/hadoop-3.2.4/hadoop-3.2.4.tar.gz
 ```
 
 2、解压hadoop
 
 ```
-tar xzf hadoop-2.7.7.tar.gz
+tar xzf hadoop-3.2.4.tar.gz
 ```
 
 3、配置hadoop
@@ -65,7 +66,7 @@ tar xzf hadoop-2.7.7.tar.gz
 ```
 #先创建hadoop文件夹
 mkdir /usr/local/hadoop
-mv hadoop-2.7.7 /usr/local/hadoop
+mv hadoop-3.2.4 /usr/local/hadoop
 ```
 
 ②编辑配置文件
@@ -74,7 +75,7 @@ mv hadoop-2.7.7 /usr/local/hadoop
 ```
 vim /etc/profile
 #插入下面三行文件
-export HADOOP_HOME=/usr/local/hadoop/hadoop-2.7.7
+export HADOOP_HOME=/usr/local/hadoop/hadoop-3.2.4
 export PATH=$PATH:$HADOOP_HOME/sbin  
 export PATH=$PATH:$HADOOP_HOME/bin#退出并保存
 ```
@@ -169,17 +170,17 @@ X.X.X(其他主机ip) serverb  （单节点无需填写）
 
 
 
-3、hadoop正常启动总共需要修改6个配置文件，均在hadoop-2.7.7/etc/hadoop目录下，分别是hadoop-env.sh、 slaves、[core-site.xml](http://hadoop.apache.org/docs/r2.6.0/hadoop-project-dist/hadoop-common/core-default.xml)、[hdfs-site.xml](http://hadoop.apache.org/docs/r2.6.0/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml)、[mapred-site.xml](http://hadoop.apache.org/docs/r2.6.0/hadoop-mapreduce-client/hadoop-mapreduce-client-core/mapred-default.xml)、[yarn-site.xml](http://hadoop.apache.org/docs/r2.6.0/hadoop-yarn/hadoop-yarn-common/yarn-default.xml) 。
+3、hadoop正常启动总共需要修改6个配置文件，均在hadoop-3.2.4/etc/hadoop目录下，分别是hadoop-env.sh、 slaves、[core-site.xml](http://hadoop.apache.org/docs/r2.6.0/hadoop-project-dist/hadoop-common/core-default.xml)、[hdfs-site.xml](http://hadoop.apache.org/docs/r2.6.0/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml)、[mapred-site.xml](http://hadoop.apache.org/docs/r2.6.0/hadoop-mapreduce-client/hadoop-mapreduce-client-core/mapred-default.xml)、[yarn-site.xml](http://hadoop.apache.org/docs/r2.6.0/hadoop-yarn/hadoop-yarn-common/yarn-default.xml) 。
 
 ①修改hadoop-env.sh配置文件
 
 
 ```
 #编辑配置文件
-vim /usr/local/hadoop/hadoop-2.7.7/etc/hadoop/hadoop-env.sh
+vim /usr/local/hadoop/hadoop-3.2.4/etc/hadoop/hadoop-env.sh
 #添加自己配置好的jdk环境
 export JAVA_HOME=/usr/local/java/jdk1.8.0_141
-export HADOOP_CONF_DIR=/usr/local/hadoop/hadoop-2.7.7/etc/hadoop
+export HADOOP_CONF_DIR=/usr/local/hadoop/hadoop-3.2.4/etc/hadoop
 #source一下
 source hadoop-env.sh
 ```
@@ -187,7 +188,7 @@ source hadoop-env.sh
 ②、配置slaves文件（单节点无需步骤）
 
 ```
-#编辑slaves文件vim /usr/local/hadoop-2.7.7/etc/hadoop/slaves
+#编辑slaves文件vim /usr/local/hadoop-3.2.4/etc/hadoop/slaves
 #添加2个节点（删除原先内容）
 serverb 
 ```
@@ -332,7 +333,7 @@ serverb
 这里注意，对于其他主机（如serverb），需要将上述所有操作在其他主机上重复一遍hadoop不需要重新下载和配置，直接copy过去即可
 
 ```
-scp -r /usr/local/hadoop/hadoop-2.7.7 root@serverb:/usr/local/hadoop
+scp -r /usr/local/hadoop/hadoop-3.2.4 root@serverb:/usr/local/hadoop
 ```
 
 V、启动hadoop
@@ -361,11 +362,11 @@ jps
 
 ![img.png](../img/img.png)
 
-如果出现以下问题：
-1. 
+## 如果出现以下问题：
+### 1. 
 ![img_1.png](../img/img_1.png)
 需要修改vim hdfs-site.xml 副本数改为1
-2. 
+### 2. 
 ![img.png](../img/img3.png)
 
 ```aidl
@@ -380,7 +381,7 @@ chmod 600 authorized_keys
 cat id_rsa.pub >> authorized_keys
 
 ```
-3. resourceManager启动不起来
+### 3. resourceManager启动不起来
 
 检查配置的/etc/hosts，如果配置的是外网ip，改成内网ip
 ![img.png](../img/img4.png)
@@ -390,3 +391,5 @@ cat id_rsa.pub >> authorized_keys
 ## 必须配置内网ip
 172.18.0.1 lavm-h1qfimpzbs
 ```
+参考这个帖子
+https://www.cnblogs.com/ya-qiang/p/10076424.html
