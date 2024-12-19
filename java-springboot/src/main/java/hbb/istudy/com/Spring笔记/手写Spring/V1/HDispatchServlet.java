@@ -68,7 +68,6 @@ public class HDispatchServlet extends HttpServlet {
             resp.getWriter().write("404");
             return;
         }
-        ApplicationContext
 
         Method method = this.HandlerMapping.get(url);
         //1. 先把参数名字（key）和形参的位置（value）建立映射关系，并缓存下来

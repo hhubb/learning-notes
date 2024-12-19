@@ -23,13 +23,17 @@ IoC、DI、MVC、AOP、JDBC...
 
 
 ## V2：用30个类实现IoC
-工厂如何把对象创建出来，交给用户（工厂模式、原型、单例）
-1. 容器Map
-2. 上下文context
-3. 工厂 factory
-4. bean
-5. BeanDefinition元信息、配置文件（xml、yml、properties...）
-6. Reader解析器
+两个核心功能 
+1. init
+![img.png](img.png)
+
+2. getBean
+
+DispatchServlet 持有ApplicationContext的引用
+初始化ApplicationContext的时候，ApplicationContext会new一个BeanDefinitionReader的方法，由这个reader进行配置解析和加载beanDefinition，然后再加载Bean
+
+
+
 ## V3：用30个类实现DI
 怎么给对象自动赋值、解决循环依赖注入（组合复用原则）
 
