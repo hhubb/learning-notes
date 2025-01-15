@@ -41,7 +41,7 @@ docker start my-nginx
 docker start 容器ID
 ```
 
-3. 创建容器
+3. 启动容器
 
 ```Bash
 # 启动已创建的容器
@@ -151,13 +151,13 @@ docker pull nginx:latest
   - `-p 3306:3306`：将容器的3306端口映射到宿主机的3306端口。
   - `-d mysql:latest`：后台运行MySQL容器，使用最新版本的MySQL镜像。
 
-验证数据持久化
+### 据持久化初体验
 
 - 进入容器并创建数据库和表。
 - 删除并重新创建容器，验证数据库和表是否仍然存在。
 - 通过验证，确认数据已经成功持久化到宿主机的指定目录中。
 
-详细验证步骤
+#### 详细验证步骤
 
 通过不使用Volumes到使用Volumes一个前后对比。
 
@@ -167,13 +167,13 @@ docker pull nginx:latest
 docker run --name docker-mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -v /my/own/data/dir:/var/lib/mysql -p 3306:3306 -d mysql:latest
 ```
 
-1. 进入容器并连接MySQL客户端：
+2. 进入容器并连接MySQL客户端：
 
 ```Bash
 docker exec -it docker-mysql mysql -h 127.0.0.1 -P 3306 -uroot -p
 ```
 
-1. 创建数据库和表：
+3. 创建数据库和表：
    1. 创建数据库：`CREATE DATABASE docker_database;`
    2. 使用数据库：`USE docker_database;`
    3. 建表：
@@ -187,20 +187,20 @@ docker exec -it docker-mysql mysql -h 127.0.0.1 -P 3306 -uroot -p
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP -- 更新时间，默认为当前时间，更新时自动修改
       );
       ```
-2. 验证表结构：
+   5. 验证表结构：
 
 ```SQL
 DESC users;
 ```
 
-1. 删除容器：
+4. 删除容器：
 
 ```Bash
 docker rm -f docker-mysql
 ```
 
-1. 重新创建容器.
-2. 进入新容器并尝试使用数据库，发现`docker_database`数据库仍然存在，数据已经成功持久化。
+5. 重新创建容器.
+6进入新容器并尝试使用数据库，发现`docker_database`数据库仍然存在，数据已经成功持久化。
 
 ### 卷的错误使用
 
