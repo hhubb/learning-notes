@@ -40,7 +40,7 @@ DispatchServlet 持有ApplicationContext的引用
 ![img_1.png](img_1.png)
 一级缓存：已完成依赖注入的bean
 二级缓存：早期纯净的bean
-三级缓存：存放代理的bean，为以后AOP动态代理实现做准备
+三级缓存：Bean工厂，用于创建Bean
 核心代码
 ```
     //一级缓存成熟bean
@@ -135,7 +135,7 @@ DispatchServlet 持有ApplicationContext的引用
         }
     }
 ```
-![img_2.png](img_2.png)
+![](../循环依赖.jpg)
 **以下三种情况不能循环依赖
 1. 通过构造器注入不能支持三级缓存方式解决循环依赖，需要靠延迟加载解决
 2. 实例非单例模式不能支持循环依赖**
