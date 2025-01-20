@@ -106,3 +106,22 @@ Spring使用三级缓存解决循环依赖。
 不存在则查看是否有创建标识，如果有则表明存在循环依赖。继续到二级缓存获取bean。如果不存在则到三级缓存中获取BeanFactory创建Bean，如果有进行AOP代理则创建代理类的实例，将创建好的实例加入二级缓存中，并将BeanFactory从三级缓存中移除。拿到二级缓存的Bean后进行依赖注入，再次调用getBean的方式获取需要注入的依赖的bean重复上述流程。直到注入完成，返回。
 ![](循环依赖.jpg)
 
+## BeanFactory和FactoryBean的区别
+BeanFactory是一个工厂，是IoC创建bean的顶级接口，通过getBean()方法获取Bean。
+FactoryBean是一个Bean，也是一个接口，接口的类将提供一个 getObject() 方法来创建 Bean 对象,可以自定义这个Bean的生产过程。
+
+## for循环内操作数据库，是一个数据库连接还是多个
+是多个连接，而且多次连接数据库会导致连接池的数量不可控，因为循环的次数不固定。（for100次会占用100个连接，所以无法预估设置连接池资源的数量）
+解决方案：
+1. 分页：保证每次查询数量可控
+2. 缓存：避免多次查询数据库
+3. 联合查询：在一个查询中获取数据
+批量插入？可以用分页方案
+
+## @Resource 与 @AAutowired 区别
+@Autowired 和 @Resource 都是用来实现依赖注入的注解（在 Spring/Spring Boot 项目中），但二者却有着 5 点不同：
+1. 来源不同：@Autowired 来自 Spring 框架，而 @Resource 来自于（Java）JSR-250；
+2. 依赖查找的顺序不同：@Autowired 先根据类型再根据名称查询，而 @Resource 先根据名称再根据类型查询；
+3. 支持的参数不同：@Autowired 只支持设置 1 个参数，而 @Resource 支持设置 7 个参数；
+4. 依赖注入的用法支持不同：@Autowired 既支持构造方法注入，又支持属性注入和 Setter 注入，而 @Resource 只支持属性注入和 Setter 注入；
+5. 编译器 IDEA 的提示不同：当注入 Mapper 对象时，使用 @Autowired 注解编译器会提示错误，而使用 @Resource 注解则不会提示错误。

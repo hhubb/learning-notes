@@ -7,9 +7,32 @@ IOC：**是面向对象编程的一种设计原则，可以减低代码之间的
 采用IOC设计模式后，通过DI技术引用对象不需要程序通过new的方式获取对象，而是通过Spring内部的容器来控制并将对象的引用注入到依赖他的对象中。
 简单的总结：IOC把对象创建的控制权从应用程序转移到Spring自身的容器之中，并通过依赖注入或依赖查找的方式将被引用对象的地址注入到引用他的对象中。
 
+### 容器核心类
+BeanFactory接口提供了一种高级配置机制，能够管理任何类型的对象。
+ApplicationContext是BeanFactory的子接口，增加了:
+1. 与Spring AOP集成的更方便
+2. 增加消息资源处理（用于国际化）
+3. 增加事件发布机制
+4. 增加应用层特定上下文，如：适合Web应用的WebApplication
 
+### ApplicationContext
+**ApplicationContext接口可以代表Spring 的IoC容器**，用于负责实例化、配置、组装Bean。
+容器通过读取配置**元数据**来获取组件的实例化、配置和组装指令。
+配置元数据可以表示为带注释的组件类、带有工厂方法的配置类、外部XML文件或Groovy脚本。
+使用这些格式，您都可以构建应用程序以及这些组件之间丰富的相互依赖关系。
 
+ApplicationContext的一些实现类是Spring的核心。如：AnnotationConfigApplicationContext（注解） 或者 ClassPathXmlApplicationContext（XML）.
+ApplicationContext还提供getBeanFactory()，获取Bean工厂让用户在容器外部创建对象。
 
+### 什么是Bean
+在Spring中，构建应用程序并由IoC容器管理的对象叫做Bean
+
+### Bean核心类
+BeanDefinition：在容器中代Bean对象。里面包含：
+1. 包含包路径的全类名：bean的真正的实现类的全类名
+2. Bean行为的配置元素，它声明Bean在容器中的行为（作用域、生命周期回调等等）。
+3. 需要的依赖，也就是引用的其他的bean
+4. 其他创建Bean的配置信息
 
 
 ## DI（Dependency Injection） 依赖注入
@@ -19,7 +42,8 @@ IOC：**是面向对象编程的一种设计原则，可以减低代码之间的
 “注入”是指将“依赖（变量）”传递给接收方的过程。在“注入”之后，接收方才会调用该“依赖”
 
 ### 实现方式
-建构子注入：依赖由客户对象的构造函数传入。Spring Boot 推荐使用构造器注入的方式
+建构子注入：依赖由客户对象的构造函数传入。Spring Boot 推荐使用构造器注入的方式，因为这样可以保证注入的依赖不为空。
+构造函数参数解析匹配通过使用参数的类型进行。除特殊指定，在bean定义中定义构造函数参数的顺序就是在实例化bean时将这些参数提供给适当构造函数的顺序。
 ```
 @Component
 public class MyService {
@@ -34,6 +58,8 @@ public class MyService {
 
 ```
 Setter 注入：客户对象暴露一个能接收依赖的 setter 方法。
+基于setter的DI是由容器在调用无参数构造函数或无参数静态工厂方法实例化bean之后调用bean上的setter方法来完成的。
+在setter方法上使用@Autowired注释可以使该属性成为必需的依赖项；
 存在一些潜在问题：
 1. 可能存在部分初始化
 2. 可能发生注入遗漏
@@ -52,34 +78,8 @@ public class MyService {
 }
 
 ```
-接口注入：依赖的接口提供一个注入器方法，该方法会把依赖注入到任意一个传给它的客户。客户实现一个setter接口，可设置依赖。不是 Spring 推荐的方式
-```
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+循环依赖通常发生才Setter注入上
 
-// 注入接口
-interface DependencyAware {
-    void setDependency(MyRepository myRepository);
-}
-
-// 客户端类实现注入接口
-@Service
-public class MyService implements DependencyAware {
-
-    private MyRepository myRepository;
-
-    @Override
-    public void setDependency(MyRepository myRepository) {
-        this.myRepository = myRepository;
-    }
-
-    public void performTask() {
-        // 业务逻辑
-        myRepository.doSomething();
-    }
-}
-
-```
 字段注入：最常见的注入方式、注入方式简单明了，类中定义全局变量，可以使用@Autowired、@Resource、@Inject注解来实现
 在私有变量前加“@Autowired”等注解，不需要显式的定义以上三种代码，便可以让外部容器传入对应的对象。
 该方案相当于定义了public的set方法，但是因为没有真正的set方法，从而不会为了实现依赖注入导致暴露了不该暴露的接口（因为set方法只想让容器访问来注入而并不希望其他依赖此类的对象访问）。
