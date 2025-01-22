@@ -16,6 +16,16 @@ ApplicationContext是的BeanFactory的一个面向用户的实现接口，所以
 
 ## Spring Bean各个作用域的区别
 
+| 作用域            | 含义   | 生命周期                           | 范围 |
+|----------------|------|--------------------------------|-----|
+| singleton      | 单例   | 生命周期与Spring容器的启动到Spring容器的销毁一致 | ApplicationContext全局 |
+| prototype      | 原型   | 在调用前创建，调用后销毁                   | ApplicationContext全局 |
+| request        | 请求   | 一次请求发起创建，请求返回结束                | ApplicationContext全局 |
+| session        | 会话   | 随着一个在会话产生创建，会话结束销毁，默认30min     | ApplicationContext全局 |
+| application    | 应用   | 随着ServletContext的生命周期创建和销毁     | ApplicationContext全局 |
+| websocket      | 原型   | 随着一次Websocket连接的生命周期创建和销毁      | ApplicationContext全局 |
+| global-session | 全局会话 | 容器中的一个应用，随着应用产生创建，所有应用结束销毁     | ApplicationContext全局 Spring5中不支持了 |
+
 | 作用域           | 含义   | 生命周期                           | 范围 |
 |---------------|------|--------------------------------|--|
 | singleton     | 单例   | 生命周期与Spring容器的启动到Spring容器的销毁一致 | 全局 |
@@ -118,10 +128,13 @@ FactoryBean是一个Bean，也是一个接口，接口的类将提供一个 getO
 3. 联合查询：在一个查询中获取数据
 批量插入？可以用分页方案
 
-## @Resource 与 @AAutowired 区别
+## @Resource 与 @Autowired 区别
 @Autowired 和 @Resource 都是用来实现依赖注入的注解（在 Spring/Spring Boot 项目中），但二者却有着 5 点不同：
 1. 来源不同：@Autowired 来自 Spring 框架，而 @Resource 来自于（Java）JSR-250；
 2. 依赖查找的顺序不同：@Autowired 先根据类型再根据名称查询，而 @Resource 先根据名称再根据类型查询；
 3. 支持的参数不同：@Autowired 只支持设置 1 个参数，而 @Resource 支持设置 7 个参数；
 4. 依赖注入的用法支持不同：@Autowired 既支持构造方法注入，又支持属性注入和 Setter 注入，而 @Resource 只支持属性注入和 Setter 注入；
 5. 编译器 IDEA 的提示不同：当注入 Mapper 对象时，使用 @Autowired 注解编译器会提示错误，而使用 @Resource 注解则不会提示错误。
+
+## Bean的生命周期不同如何完成协作，如Bean A中的属性是Bean B,A是单例模式 B是原型模式
+放弃一些控制反转。您可以通过实现ApplicationContextAware接口，并在bean A每次需要时对容器请求（通常是新的）bean B实例进行getBean（“B”）调用，使bean A意识到容器。
