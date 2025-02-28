@@ -1,4 +1,4 @@
-# @Resource 与 @AAutowired 区别
+# @Resource 与 @AAutowired、@Inject
 
 ## @Resource
 全称**javax.annotation.Resource,它属于JSR-250规范的一个注解**，包含Jakarta EE（J2EE）中。Spring提供了对该注解的支持。 
